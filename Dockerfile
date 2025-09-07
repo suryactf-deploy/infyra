@@ -2,12 +2,13 @@ FROM python:3.11-slim-bookworm AS build
 
 WORKDIR /opt/CTFd
 
-# hadolint ignore=DL3008
+# Install build deps for compiling packages like psycopg2
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         build-essential \
         libffi-dev \
         libssl-dev \
+        libpq-dev \
         git \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
@@ -20,19 +21,20 @@ COPY . /opt/CTFd
 RUN pip install --no-cache-dir -r requirements.txt \
     && for d in CTFd/plugins/*; do \
         if [ -f "$d/requirements.txt" ]; then \
-            pip install --no-cache-dir -r "$d/requirements.txt";\
+            pip install --no-cache-dir -r "$d/requirements.txt"; \
         fi; \
-    done;
+    done; \
+    pip install --no-cache-dir psycopg2-binary
 
-
+# ---------------- RELEASE IMAGE ---------------- #
 FROM python:3.11-slim-bookworm AS release
 WORKDIR /opt/CTFd
 
-# hadolint ignore=DL3008
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         libffi8 \
         libssl3 \
+        libpq5 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
